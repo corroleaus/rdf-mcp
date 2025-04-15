@@ -1,9 +1,8 @@
-from mcp.server.fastmcp import FastMCP
-import json
+from mcp import FastMCP
 import rdflib
-import sys
 
-mcp = FastMCP("GraphDemo")
+# Specify dependencies for deployment and development
+mcp = FastMCP("GraphDemo", dependencies=["rdflib"])
 
 graph = rdflib.Graph()
 graph.parse("https://brickschema.org/schema/1.4.3/Brick.ttl", format="turtle")
@@ -19,12 +18,16 @@ def get_terms() -> list[str]:
         ?class a owl:Class .
     }"""
     results = graph.query(query)
-    #return [str(row[0]).split('#')[-1] for row in results]
-    r = [str(row[0]).split('#')[-1] for row in results]
-    return r
+    return [str(row[0]).split('#')[-1] for row in results]
 
 
 @mcp.resource("rdf://describe/{term}")
 def get_definition(term: str) -> str:
     """Get the turtle definition of the term"""
-    return graph.cbd(rdflib.BRICK[term]).serialize(format="turtle")
+    # Construct the full URI for the term
+    term_uri = rdflib.Namespace("https://brickschema.org/schema/1.4.3/Brick#")[term]
+    return graph.cbd(term_uri).serialize(format="turtle")
+
+
+if __name__ == "__main__":
+    mcp.run()
